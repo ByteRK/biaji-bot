@@ -1,0 +1,11 @@
+[Unit]
+Description=biaji-bot
+After=network.service
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/python3 /opt/biaji-bot/main.py > /opt/biaji-bot/log/autorun.log 2>&1
+Restart=always
+[Install]
+WantedBy=multi-user.target

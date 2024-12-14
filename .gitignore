@@ -1,0 +1,5 @@
+*/__pycache__
+datebase/
+log/
+venv/
+config.py
