@@ -2,6 +2,8 @@ import config
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters, CallbackQueryHandler
+from telegram.helpers import escape_markdown
+from telegram.constants import ParseMode
 
 from mode_admin.group import group_set, set_callback
 from mode_data.write_txt import nowtime
@@ -15,7 +17,12 @@ Main_Bot = config.bot['key']
 Bot_Name = config.bot['name']
 
 async def start(update: Update, context: CallbackContext):
-    await context.bot.send_message(update.effective_chat.id,'🚨 CC代码写得很烂！')
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text='🚨 CC代码写得很烂！\n此Bot已开源 👉 [GITHUB]({})'.format(
+            escape_markdown("https://github.com/ByteRK/biaji-bot", version=2)
+        ), parse_mode=ParseMode.MARKDOWN_V2
+            )
     await msgdel(update, context)
 
 
