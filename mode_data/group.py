@@ -37,9 +37,7 @@ def build_group_msg(update: Update) -> BJgroup:
     return mygroup
 
 
-def build_group_callback(context: CallbackContext) -> BJgroup:
-    chat = context.job.context.chat
-
-    mygroup = BJgroup(chat.id, chat.title)
+def build_group_callback(id, title) -> BJgroup:
+    mygroup = BJgroup(id, title)
     return mygroup
 

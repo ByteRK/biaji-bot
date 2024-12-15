@@ -27,9 +27,3 @@ def checkgroupadmin(userid, chatgroup_id) -> bool:
         return False
     else:
         return True
-
-
-if __name__ == '__main__':
-    # ccadd(11, '66', '55')
-    Bot_API = "5245812142:AAG7hfPdJF_8XB7V5htmgt_G6hn1kNoiif0"
-    print(checkgroupadmin(5577400096, -1001518926694))

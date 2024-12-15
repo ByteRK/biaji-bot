@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
+import config
 from mode_admin.admin import checkgroupadmin, checkgroup
 from mode_data.database import user_seach
 from mode_fun.msgdel import auto_msgdel, msgdel
@@ -42,7 +43,7 @@ def build_user(update: Update) -> BJuser:
     return myuser
 
 
-def check_info(update: Update, context: CallbackContext) -> None:
+async def check_info(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     msg = update.effective_message
     username = 'CCNULL'
@@ -73,14 +74,18 @@ def check_info(update: Update, context: CallbackContext) -> None:
         returnmsg += '是否大喜仔: {}\n'.format(str(myuser.admin).replace('1', '是').replace('0', '否'))
         if myuser.ban:
             returnmsg += '是否被封禁: 是\n封禁者: {}\n封禁原因: {}'.format(
-                myuser.ban_admin.replace('570255200', '大喜仔Cc'), myuser.ban_text
+                myuser.ban_admin.replace(str(config.author), '大喜仔Cc'), myuser.ban_text
             )
 
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
                         chat_id=update.effective_chat.id,
                         text=returnmsg)
-        msgdel(update)
-        context.job_queue.run_once(auto_msgdel, 8, context=backmsg)
+        await msgdel(update, context)
+        context.job_queue.run_once(auto_msgdel, 8, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
 if __name__ == '__main__':

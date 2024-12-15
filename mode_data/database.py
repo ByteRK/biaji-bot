@@ -2,7 +2,7 @@ import pymysql
 import config
 
 
-def set_conn(db='tgbot_xizai') -> pymysql.Connection:
+def set_conn(db='tgbot_biaji') -> pymysql.Connection:
     conn = pymysql.connect(
         host=config.datebase['host'], port=config.datebase['port'],
         user=config.datebase['user'], password=config.datebase['password'],

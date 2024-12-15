@@ -1,6 +1,7 @@
-from telegram import Update, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.constants import ParseMode
 from telegram.ext import CallbackContext
-from telegram.utils.helpers import escape_markdown
+from telegram.helpers import escape_markdown
 
 import config
 from mode_data.database import set_conn, user_add
@@ -100,7 +101,7 @@ def do_setpia(user_id, num) -> bool:
     return True
 
 
-def ccadd(update: Update, context: CallbackContext):
+async def ccadd(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat = update.effective_chat
     user = update.effective_user
@@ -112,10 +113,10 @@ def ccadd(update: Update, context: CallbackContext):
         username = user.username
     myuser = BJuser(user.id, user.first_name, username)
 
-    if myuser.id == 570255200:
+    if myuser.id == config.author:
         if msg.reply_to_message:
             if chat.type == 'private':
-                context.bot.sendMessage(chat_id=chat.id, text='🎊 Cc你好~')
+                await context.bot.sendMessage(chat_id=chat.id, text='🎊 Cc你好~')
             else:
                 touser_name = msg.reply_to_message.from_user.first_name
                 touser_id = msg.reply_to_message.from_user.id
@@ -123,31 +124,35 @@ def ccadd(update: Update, context: CallbackContext):
                 if not touser_username:
                     touser_username = 'CCNULL'
                 if add_admin(touser_id, touser_name, touser_username):
-                    context.bot.sendMessage(
+                    await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🥳 [{}](tg://user?id={})已被任命为*大喜仔*'.format(
                             escape_markdown(touser_name, version=2), touser_id
                         ), parse_mode=ParseMode.MARKDOWN_V2)
                 else:
-                    backmsg = context.bot.sendMessage(
+                    backmsg = await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🤯 任命*大喜仔*失败', parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            backmsg = context.bot.sendMessage(
+            backmsg = await context.bot.sendMessage(
                 chat_id=chat.id,
                 text='🎊 呆瓜Cc你好~')
     else:
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
             chat_id=chat.id,
             text='[{}](tg://user?id={}) ，你个假Cc！！！'.format(
                 escape_markdown(myuser.name, version=2), myuser.id
             ), parse_mode=ParseMode.MARKDOWN_V2)
-    msgdel(update)
+    await msgdel(update, context)
     if backmsg and not chat.type == 'private':
-        context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+        context.job_queue.run_once(auto_msgdel, 5, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
-def ccdel(update: Update, context: CallbackContext):
+async def ccdel(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat = update.effective_chat
     user = update.effective_user
@@ -159,41 +164,45 @@ def ccdel(update: Update, context: CallbackContext):
         username = user.username
     myuser = BJuser(user.id, user.first_name, username)
 
-    if myuser.id == 570255200:
+    if myuser.id == config.author:
         if msg.reply_to_message:
             if chat.type == 'private':
-                context.bot.sendMessage(
+                await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🎊 Cc你好~')
             else:
                 touser_name = msg.reply_to_message.from_user.first_name
                 touser_id = msg.reply_to_message.from_user.id
                 if del_admin(touser_id):
-                    context.bot.sendMessage(
+                    await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🥳 [{}](tg://user?id={})已毕业，不再是*大喜仔*'.format(
                             escape_markdown(touser_name, version=2), touser_id
                         ),
                         parse_mode=ParseMode.MARKDOWN_V2)
                 else:
-                    backmsg = context.bot.sendMessage(
+                    backmsg = await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🤯 *毕业失败*', parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            backmsg = context.bot.sendMessage(
+            backmsg = await context.bot.sendMessage(
                 chat_id=chat.id,
                 text='😑 呆瓜Cc')
     else:
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
             chat_id=chat.id,
             text='[{}](tg://user?id={}) ，你个假Cc！！！'.format(
                 escape_markdown(myuser.name, version=2), myuser.id
             ), parse_mode=ParseMode.MARKDOWN_V2)
     if backmsg and not chat.type == 'private':
-        context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+        context.job_queue.run_once(auto_msgdel, 5, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
-def setpia(update: Update, context: CallbackContext):
+async def setpia(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat = update.effective_chat
     user = update.effective_user
@@ -203,15 +212,19 @@ def setpia(update: Update, context: CallbackContext):
         username = user.username
     myuser = BJuser(user.id, user.first_name, username)
 
-    if myuser.id == 570255200:
+    if myuser.id == config.author:
         pia_num = msg.text.replace(config.bot['name'], '')
         if not len(pia_num) > len('/setpia '):
-            backmsg = context.bot.sendMessage(
+            backmsg = await context.bot.sendMessage(
                 chat_id=chat.id,
                 text="😑 呆瓜Cc")
-            msgdel(update)
+            await msgdel(update, context)
             if not chat.type == 'private':
-                context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+                context.job_queue.run_once(auto_msgdel, 5, data={
+                    'bot': context.bot,
+                    'chat':backmsg.chat,
+                    'message_id': backmsg.message_id
+                })
             return
         else:
             pia_num = pia_num[len('/rename '):].strip()
@@ -220,44 +233,48 @@ def setpia(update: Update, context: CallbackContext):
             touser_name = msg.reply_to_message.from_user.first_name
             touser_id = msg.reply_to_message.from_user.id
             if do_setpia(touser_id, int(pia_num)):
-                backmsg = context.bot.sendMessage(
+                backmsg = await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🥳 [{}](tg://user?id={})的大逼兜权重已更改为 *{}*'.format(
                         escape_markdown(touser_name, version=2), touser_id,
                         escape_markdown(pia_num, version=2)
                     ), parse_mode=ParseMode.MARKDOWN_V2)
             else:
-                backmsg = context.bot.sendMessage(
+                backmsg = await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🤯 [{}](tg://user?id={})的大逼兜权重更改失败'.format(
                         escape_markdown(touser_name, version=2), touser_id
                     ), parse_mode=ParseMode.MARKDOWN_V2)
         else:
             if do_setpia(myuser.id, int(pia_num)):
-                backmsg = context.bot.sendMessage(
+                backmsg = await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🥳 [{}](tg://user?id={})的大逼兜权重已更改为 *{}*'.format(
                         escape_markdown(myuser.name, version=2), myuser.id,
                         escape_markdown(pia_num, version=2)
                     ), parse_mode=ParseMode.MARKDOWN_V2)
             else:
-                backmsg = context.bot.sendMessage(
+                backmsg = await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🤯 [{}](tg://user?id={})的大逼兜权重更改失败'.format(
                         escape_markdown(myuser.name, version=2), myuser.id
                     ), parse_mode=ParseMode.MARKDOWN_V2)
     else:
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
             chat_id=chat.id,
             text='💣 笨蛋[{}](tg://user?id={}) ，这个命令只有Cc可用'.format(
                 escape_markdown(myuser.name, version=2), myuser.id
             ), parse_mode=ParseMode.MARKDOWN_V2)
-    msgdel(update)
+    await msgdel(update, context)
     if backmsg and not chat.type == 'private':
-        context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+        context.job_queue.run_once(auto_msgdel, 5, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
-def ccban(update: Update, context: CallbackContext):
+async def ccban(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat = update.effective_chat
     user = update.effective_user
@@ -269,7 +286,7 @@ def ccban(update: Update, context: CallbackContext):
         username = user.username
     myuser = BJuser(user.id, user.first_name, username)
 
-    if myuser.id == 570255200:
+    if myuser.id == config.author:
         if msg.reply_to_message:
 
             ban_text = msg.text.replace(config.bot['name'], '')
@@ -279,7 +296,7 @@ def ccban(update: Update, context: CallbackContext):
                 ban_text = ban_text[len('/hot '):].strip()
 
             if chat.type == 'private':
-                context.bot.sendMessage(
+                await context.bot.sendMessage(
                     chat_id=chat.id,
                     text='🎊 Cc你好~')
             else:
@@ -289,32 +306,36 @@ def ccban(update: Update, context: CallbackContext):
                 if not touser_username:
                     touser_username = 'CCNULL'
                 if ban_user(touser_id, touser_name, touser_username, ban_text, myuser.id):
-                    context.bot.sendMessage(
+                    await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🥳 [{}](tg://user?id={})已被[{}](tg://user?id={})*封禁*'.format(
                             escape_markdown(touser_name, version=2), touser_id,
                             escape_markdown(myuser.name, version=2), myuser.id
                         ), parse_mode=ParseMode.MARKDOWN_V2)
                 else:
-                    backmsg = context.bot.sendMessage(
+                    backmsg = await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🤯 *封禁*失败', parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            backmsg = context.bot.sendMessage(
+            backmsg = await context.bot.sendMessage(
                 chat_id=chat.id,
                 text='🎊 呆瓜Cc你好~')
     else:
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
             chat_id=chat.id,
             text='[{}](tg://user?id={})想被ban？'.format(
                 escape_markdown(myuser.name, version=2), myuser.id
             ), parse_mode=ParseMode.MARKDOWN_V2)
-    msgdel(update)
+    await msgdel(update, context)
     if backmsg and not chat.type == 'private':
-        context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+        context.job_queue.run_once(auto_msgdel, 5, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
-def ccunban(update: Update, context: CallbackContext):
+async def ccunban(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat = update.effective_chat
     user = update.effective_user
@@ -326,41 +347,45 @@ def ccunban(update: Update, context: CallbackContext):
         username = user.username
     myuser = BJuser(user.id, user.first_name, username)
 
-    if myuser.id == 570255200:
+    if myuser.id == config.author:
         if msg.reply_to_message:
             if chat.type == 'private':
-                context.bot.sendMessage(chat_id=chat.id, text='🎊 Cc你好~')
+                await context.bot.sendMessage(chat_id=chat.id, text='🎊 Cc你好~')
             else:
                 touser_name = msg.reply_to_message.from_user.first_name
                 touser_id = msg.reply_to_message.from_user.id
                 if unban_user(touser_id):
-                    context.bot.sendMessage(
+                    await context.bot.sendMessage(
                         chat_id=chat.id,
                         text='🥳 [{}](tg://user?id={})已被*解封*'.format(
                             escape_markdown(touser_name, version=2), touser_id,
                         ), parse_mode=ParseMode.MARKDOWN_V2)
                 else:
-                    backmsg = context.bot.sendMessage(
+                    backmsg = await context.bot.sendMessage(
                         chat_id=chat.id, text='🤯 *解封*失败', parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            backmsg = context.bot.sendMessage(
+            backmsg = await context.bot.sendMessage(
                 chat_id=chat.id,
                 text='🎊 呆瓜Cc你好~')
     else:
-        backmsg = context.bot.sendMessage(
+        backmsg = await context.bot.sendMessage(
             chat_id=chat.id,
             text='[{}](tg://user?id={})想被ban？'.format(
                 escape_markdown(myuser.name, version=2), myuser.id
             ), parse_mode=ParseMode.MARKDOWN_V2)
-    msgdel(update)
+    await msgdel(update, context)
     if backmsg and not chat.type == 'private':
-        context.job_queue.run_once(auto_msgdel, 5, context=backmsg)
+        context.job_queue.run_once(auto_msgdel, 5, data={
+            'bot': context.bot,
+            'chat':backmsg.chat,
+            'message_id': backmsg.message_id
+        })
 
 
-def cc_pro(update: Update, context: CallbackContext):
+async def cc_pro(update: Update, context: CallbackContext):
     chat = update.effective_chat
     # print(msg.text)
-    msgdel(update)
+    await msgdel(update, context)
     reply_markup = InlineKeyboardMarkup(
         [
             [
@@ -371,5 +396,5 @@ def cc_pro(update: Update, context: CallbackContext):
             ],
         ]
     )
-    context.bot.sendMessage(chat_id=chat.id, text="Cc你好吖", reply_markup=reply_markup)
+    await context.bot.sendMessage(chat_id=chat.id, text="Cc你好吖", reply_markup=reply_markup)
     return

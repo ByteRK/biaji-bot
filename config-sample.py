@@ -12,13 +12,16 @@ datebase = {
 }
 
 # 当前版本号
-Version = "3.6.6"
+Version = "3.7.0"
 
 # TGBOT 数据
 bot = {
     "key": "xxxxxxxx",
     "name": "@Bot"
 }
+
+# 超级管理员id
+author = 666666
 
 
 if __name__ == '__main__':
